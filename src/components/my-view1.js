@@ -15,10 +15,49 @@ import { PageViewElement } from './page-view-element.js';
 import { SharedStyles } from './shared-styles.js';
 
 class MyView1 extends PageViewElement {
+
+  firstUpdated(){
+      var graph = new joint.dia.Graph;
+
+      var paper = new joint.dia.Paper({
+          el: this.shadowRoot.getElementById('myholder'),
+          model: graph,
+          width: 600,
+          height: 100,
+          gridSize: 1
+      });
+
+      var rect = new joint.shapes.standard.Rectangle();
+      rect.position(100, 30);
+      rect.resize(100, 40);
+      rect.attr({
+          body: {
+              fill: 'blue'
+          },
+          label: {
+              text: 'Hello',
+              fill: 'white'
+          }
+      });
+      rect.addTo(graph);
+
+      var rect2 = rect.clone();
+      rect2.translate(300, 0);
+      rect2.attr('label/text', 'World!');
+      rect2.addTo(graph);
+
+      var link = new joint.shapes.standard.Link();
+      link.source(rect);
+      link.target(rect2);
+      link.addTo(graph);
+  }
+
   render() {
+
     return html`
       ${SharedStyles}
       <section>
+       <div id="myholder"></div>
         <h2>Static page</h2>
         <p>This is a text-only page.</p>
         <p>It doesn't do anything other than display some static text.</p>
