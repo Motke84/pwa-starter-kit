@@ -1,0 +1,40 @@
+/**
+@license
+Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+*/
+
+export const GET_FLOW_ITEMS = 'GET_FLOW_ITEMS';
+
+
+const FLOW_ITEMS = 
+{
+    node:
+    [
+        {"id": 1, "title": "Hello", },
+        {"id": 2, "title": "World!"}
+    ],
+    connections:
+    [
+        {"source": 1 , "destination": 2}
+    ]
+};
+
+export const getAllFlowItems = () => (dispatch) => {
+  // Here you would normally get the data from the server. We're simulating
+  // that by dispatching an async action (that you would dispatch when you
+  // succesfully got the data back)
+
+  // You could reformat the data in the right format as well:
+  const flowItems = FLOW_ITEMS;
+ 
+  dispatch({
+    type: GET_FLOW_ITEMS,
+    flowItems
+  });
+};
+
