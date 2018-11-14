@@ -11,30 +11,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 export const GET_FLOW_ITEMS = 'GET_FLOW_ITEMS';
 
 
-const FLOW_ITEMS = 
-{
-    node:
-    [
-        {"id": 1, "title": "Hello", },
-        {"id": 2, "title": "World!"}
-    ],
-    connections:
-    [
-        {"source": 1 , "destination": 2}
-    ]
-};
+const FLOW_ITEMS =
+    {
+        nodes:
+            [
+                { "title": "Hello", "type": "event", "posX": "50", "posY": "100", },
+                { "title": "World", "type": "action", "posX": "350", "posY": "100" },
+                { "title": "!!!", "type": "action", "posX": "200", "posY": "300" }
+            ],
+        connections:
+            [
+                { "source": "Hello", "destination": "World" },
+                { "source": "World", "destination": "!!!" },
+                { "source": "!!!", "destination": "Hello" }
+            ]
+    };
 
 export const getAllFlowItems = () => (dispatch) => {
-  // Here you would normally get the data from the server. We're simulating
-  // that by dispatching an async action (that you would dispatch when you
-  // succesfully got the data back)
+    // Here you would normally get the data from the server. We're simulating
+    // that by dispatching an async action (that you would dispatch when you
+    // succesfully got the data back)
 
-  // You could reformat the data in the right format as well:
-  const flowItems = FLOW_ITEMS;
- 
-  dispatch({
-    type: GET_FLOW_ITEMS,
-    flowItems
-  });
+    // You could reformat the data in the right format as well:
+    const flowItems = FLOW_ITEMS;
+
+    dispatch({
+        type: GET_FLOW_ITEMS,
+        flowItems
+    });
 };
 
