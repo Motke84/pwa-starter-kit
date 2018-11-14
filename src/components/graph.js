@@ -24,27 +24,31 @@ import { addToCartIcon } from './my-icons.js';
 
 // These are the shared styles needed by this element.
 import { ButtonSharedStyles } from './button-shared-styles.js';
+import './flow-item.js';
 
 class Graph extends connect(store)(LitElement) {
 
 
   constructor() {
     super();
-    //update
-
 
   }
 
+  /*
+   updated(_changedProperties){
+    console.log(_changedProperties);
+  }*/
+
   firstUpdated() {
-    store.dispatch(getAllFlowItems());
 
-    var graph = new joint.dia.Graph;
+    const graph = new joint.dia.Graph;
+    this.graph = graph;
 
-    var paper = new joint.dia.Paper({
+    const paper = new joint.dia.Paper({
       el: this.shadowRoot.getElementById('myholder'),
       model: graph,
       width: 1000,
-      height: 1000,
+      height: 500,
       gridSize: 50,
       drawGrid: true
     });
@@ -62,49 +66,43 @@ class Graph extends connect(store)(LitElement) {
       }
     );
 
+    paper.on('cell:pointerdown',
+      (cellView, evt, x, y) => {
+        //console.log('cell view ' + cellView.model.id + ' was clicked');
+
+        // var t1 = this.graph.getElements().find(e => e.id === cellView.model.id);
+        //   var t1 = this.graph.getCell(cellView.model.id);
+        // t1.attr('body/fill', 'red');
+      }
+    );
+
     paper.drawGrid();
 
-    var rect = new joint.shapes.standard.Rectangle();
-    rect.position(100, 30);
-    rect.resize(100, 40);
-    rect.attr({
-      body: {
-        fill: 'blue'
-      },
-      label: {
-        text: 'Hello',
-        fill: 'white'
-      }
-    });
-    rect.addTo(graph);
-
-    var rect2 = rect.clone();
-    rect2.translate(300, 0);
-    rect2.attr('label/text', 'World!');
-    rect2.addTo(graph);
-
-    var link = new joint.shapes.standard.Link();
-    link.source(rect);
-    link.target(rect2);
-    link.addTo(graph);
+    store.dispatch(getAllFlowItems());
   }
+
+
 
   render() {
 
-    console.log("render",this._flowItems);
     return html`
       ${ButtonSharedStyles}
       <style>
         :host { display: block; }
       </style>
       <div id="myholder"></div>
-
     `;
   }
 
+  /*
+    <dom-if if="${this.graph}">
+            <flow-item graph="${this.graph}" color="green" name="Test"></flow-item>
+        </dom-if>*/
+
   static get properties() {
     return {
-      _flowItems: { type: Object }
+      flowItems: { type: Object },
+      graph: { type: Object }
     }
   }
 
@@ -115,9 +113,64 @@ class Graph extends connect(store)(LitElement) {
 
   // This is called every time something is updated in the store.
   stateChanged(state) {
-    console.log("state",state.flowReducer.flowItems);
-    this._flowItems = state.flowReducer.flowItems;
+    //  console.log("state", state.flowReducer.flowItems);
+    //  console.log("graph", this.graph);
+    this.flowItems = state.flowReducer.flowItems;
+
+    if (!this.graph ||
+      !this.flowItems.nodes ||
+      !this.flowItems.connections)
+      return;
+
+
+    state.flowReducer.flowItems.nodes.forEach((elem) => {
+      const rect = this.createNode(elem);
+      rect.addTo(this.graph);
+    });
+
+    const elems = this.graph.getElements();
+
+    state.flowReducer.flowItems.connections.forEach((con) => {
+      const link = this.createLink(con, elems);
+      link.addTo(this.graph);
+    });
   }
+
+
+  createNode(elem) {
+    const shape = elem.type == 'event' ?
+      new joint.shapes.standard.Ellipse() :
+      new joint.shapes.standard.Rectangle()
+
+    shape.position(+elem.posX, +elem.posY);
+    shape.resize(100, 40);
+    shape.attr({
+      body: {
+        fill: 'blue'
+      },
+      label: {
+        text: elem.title,
+        fill: 'white'
+      }
+    });
+
+    return shape;
+  }
+
+
+  createLink(con, elems) {
+    const link = new joint.shapes.standard.Link()
+    const rect1 = elems.find(e => e.attributes.attrs.label.text == con.source);
+    const rect2 = elems.find(e => e.attributes.attrs.label.text == con.destination);
+
+    link.source(rect1);
+    link.target(rect2);
+
+    return link;
+  }
+
 }
+
+
 
 window.customElements.define('flow-graph', Graph);
