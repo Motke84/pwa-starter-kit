@@ -27,7 +27,9 @@
     "pwa-helpers": "^0.9.0",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
-    "reselect": "^4.0.0"
+    "reselect": "^4.0.0",
+    "axios-promise-redux-middleware": "1.0.1",
+    "axios": "^0.18.0"
   },
   "devDependencies": {
     "axe-core": "^3.0.0",
@@ -41,7 +43,9 @@
     "polymer-cli": "^1.7.6",
     "polyserve": "^0.27.0",
     "prpl-server": "^1.2.0",
-    "puppeteer": "^1.5.0",
     "wct-browser-legacy": "^1.0.1"
+  },
+  "config": {
+    "puppeteer_skip_chromium_download": true
   }
 }
