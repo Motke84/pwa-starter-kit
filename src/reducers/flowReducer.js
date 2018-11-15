@@ -22,7 +22,7 @@ import {
   const flowReducer = (state = INITIAL_STATE, action) => {
     switch (action.type) {
       case GET_FLOW_ITEMS:
-        console.log('flowReducer');
+        console.log(action);
         
         return {
           ...state,
