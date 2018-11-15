@@ -24,7 +24,6 @@ import { addToCartIcon } from './my-icons.js';
 
 // These are the shared styles needed by this element.
 import { ButtonSharedStyles } from './button-shared-styles.js';
-import './flow-item.js';
 
 class Graph extends connect(store)(LitElement) {
 
@@ -68,15 +67,11 @@ class Graph extends connect(store)(LitElement) {
 
     paper.on('cell:pointerdown',
       (cellView, evt, x, y) => {
-        //console.log('cell view ' + cellView.model.id + ' was clicked');
 
-        // var t1 = this.graph.getElements().find(e => e.id === cellView.model.id);
-        //   var t1 = this.graph.getCell(cellView.model.id);
-        // t1.attr('body/fill', 'red');
+        var shape = this.graph.getCell(cellView.model.id);
+        shape.attr('body/fill', 'red');
       }
     );
-
-    paper.drawGrid();
 
     store.dispatch(getAllFlowItems());
   }
@@ -86,18 +81,13 @@ class Graph extends connect(store)(LitElement) {
   render() {
 
     return html`
-      ${ButtonSharedStyles}
       <style>
         :host { display: block; }
       </style>
-      <div id="myholder"></div>
+       <button @click="${this._onRefresh}" title="Refresh">Refresh</button>
+       <div id="myholder"></div>
     `;
   }
-
-  /*
-    <dom-if if="${this.graph}">
-            <flow-item graph="${this.graph}" color="green" name="Test"></flow-item>
-        </dom-if>*/
 
   static get properties() {
     return {
@@ -107,9 +97,11 @@ class Graph extends connect(store)(LitElement) {
   }
 
 
-  _addButtonClicked(e) {
-    store.dispatch(addToCart(e.currentTarget.dataset['index']));
+  _onRefresh() {
+    this.graph.clear();
+    store.dispatch(getAllFlowItems());
   }
+
 
   // This is called every time something is updated in the store.
   stateChanged(state) {
@@ -118,6 +110,7 @@ class Graph extends connect(store)(LitElement) {
     this.flowItems = state.flowReducer.flowItems;
 
     if (!this.graph ||
+      !this.flowItems ||
       !this.flowItems.nodes ||
       !this.flowItems.connections)
       return;
@@ -146,7 +139,7 @@ class Graph extends connect(store)(LitElement) {
     shape.resize(100, 40);
     shape.attr({
       body: {
-        fill: 'blue'
+        fill: elem.type == 'event' ? 'green' : 'blue'
       },
       label: {
         text: elem.title,
