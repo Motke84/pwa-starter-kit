@@ -9,7 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 */
 
 export const GET_FLOW_ITEMS = 'GET_FLOW_ITEMS';
-
+export const SAVE_FLOW_ITEMS = 'SAVE_FLOW_ITEMS';
 
 
 export const getAllFlowItems = () => (dispatch) => {
@@ -19,7 +19,7 @@ export const getAllFlowItems = () => (dispatch) => {
 
     // You could reformat the data in the right format as well:
     let flowItems;
-
+//https://moti-m-weather-api.herokuapp.com/getFlow
     axios.get('http://localhost:3000/getFlow', {
         params: {
             
@@ -32,6 +32,34 @@ export const getAllFlowItems = () => (dispatch) => {
         dispatch({
             type: GET_FLOW_ITEMS,
             flowItems
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+ 
+};
+
+
+export const saveFlowItems = (flowItems) => (dispatch) => {
+    // Here you would normally get the data from the server. We're simulating
+    // that by dispatching an async action (that you would dispatch when you
+    // succesfully got the data back)
+    console.log(flowItems);
+    
+    // You could reformat the data in the right format as well:
+
+//https://moti-m-weather-api.herokuapp.com/saveFlow
+
+
+    axios.post('http://localhost:3000/saveFlow', {
+        params: flowItems
+      })
+      .then(function (response) {
+        console.log(response.data);
+
+        dispatch({
+            type: SAVE_FLOW_ITEMS
         });
       })
       .catch(function (error) {
