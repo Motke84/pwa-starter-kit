@@ -17,7 +17,7 @@ import { store } from '../store.js';
 // These are the elements needed by this element.
 
 // These are the actions needed by this element.
-import { getAllFlowItems } from '../actions/flowActions';
+import { getAllFlowItems ,saveFlowItems  } from '../actions/flowActions';
 
 // These are the elements needed by this element.
 import { addToCartIcon } from './my-icons.js';
@@ -46,8 +46,8 @@ class Graph extends connect(store)(LitElement) {
     const paper = new joint.dia.Paper({
       el: this.shadowRoot.getElementById('myholder'),
       model: graph,
-      width: 1000,
-      height: 500,
+      width: 5500,
+      height: 5500,
       gridSize: 50,
       drawGrid: true
     });
@@ -68,8 +68,8 @@ class Graph extends connect(store)(LitElement) {
     paper.on('cell:pointerdown',
       (cellView, evt, x, y) => {
 
-        var shape = this.graph.getCell(cellView.model.id);
-        shape.attr('body/fill', 'red');
+      //  var shape = this.graph.getCell(cellView.model.id);
+       // shape.attr('body/fill', 'red');
       }
     );
 
@@ -85,6 +85,7 @@ class Graph extends connect(store)(LitElement) {
         :host { display: block; }
       </style>
        <button @click="${this._onRefresh}" title="Refresh">Refresh</button>
+       <button @click="${this._onSave}" title="Save">Save</button>
        <div id="myholder"></div>
     `;
   }
@@ -100,6 +101,40 @@ class Graph extends connect(store)(LitElement) {
   _onRefresh() {
     this.graph.clear();
     store.dispatch(getAllFlowItems());
+  }
+
+  _onSave() {
+
+    var elem = this.graph.getElements().map((e) => { return {
+      title: e.attributes.attrs.label.text,
+      type: e.attributes.type == 'standard.Rectangle' ? 'action' :'event' ,
+      posX: e.attributes.position.x,
+      posY: e.attributes.position.y
+    };
+    });
+
+
+    console.log(elem);
+
+    var lnks = this.graph.getLinks().map((e) => { return {
+      source:  this.graph.getCell(e.attributes.source.id).attributes.attrs.label.text,
+      destination:  this.graph.getCell(e.attributes.target.id).attributes.attrs.label.text
+    };
+    });
+
+    console.log(this.graph.getLinks());
+    console.log(lnks);
+
+    var newFlowItems = {
+      nodes: elem,
+      connections: lnks
+    };
+
+    var json = JSON.stringify(newFlowItems);
+
+    console.log(json);
+    
+    store.dispatch(saveFlowItems(newFlowItems));
   }
 
 
@@ -136,7 +171,7 @@ class Graph extends connect(store)(LitElement) {
       new joint.shapes.standard.Rectangle()
 
     shape.position(+elem.posX, +elem.posY);
-    shape.resize(100, 40);
+    shape.resize(300, 40);
     shape.attr({
       body: {
         fill: elem.type == 'event' ? 'green' : 'blue'
