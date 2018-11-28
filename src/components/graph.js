@@ -17,13 +17,17 @@ import { store } from '../store.js';
 // These are the elements needed by this element.
 
 // These are the actions needed by this element.
-import { getAllFlowItems ,saveFlowItems  } from '../actions/flowActions';
+import { getAllFlowItems, saveFlowItems } from '../actions/flowActions';
 
 // These are the elements needed by this element.
 import { addToCartIcon } from './my-icons.js';
 
 // These are the shared styles needed by this element.
-import { ButtonSharedStyles } from './button-shared-styles.js';
+import { ButtonSharedStyles, HeaderRed } from './button-shared-styles.js';
+
+import { SharedStyleSuAll } from './styles/shared-styles-su-all';
+
+
 
 class Graph extends connect(store)(LitElement) {
 
@@ -40,6 +44,7 @@ class Graph extends connect(store)(LitElement) {
 
   firstUpdated() {
 
+
     const graph = new joint.dia.Graph;
     this.graph = graph;
 
@@ -47,10 +52,12 @@ class Graph extends connect(store)(LitElement) {
       el: this.shadowRoot.getElementById('myholder'),
       model: graph,
       width: 5500,
-      height: 5500,
+      height: 1000,
       gridSize: 50,
-      drawGrid: true
+      drawGrid: true,
+      // interactive: false 
     });
+
 
     //paper.drawGrid({ name: 'mesh', args: { color: 'black', thickness: 1  }});
 
@@ -68,8 +75,8 @@ class Graph extends connect(store)(LitElement) {
     paper.on('cell:pointerdown',
       (cellView, evt, x, y) => {
 
-      //  var shape = this.graph.getCell(cellView.model.id);
-       // shape.attr('body/fill', 'red');
+        // var shape = this.graph.getCell(cellView.model.id);
+        // shape.attr('body/fill', 'red');
       }
     );
 
@@ -81,45 +88,89 @@ class Graph extends connect(store)(LitElement) {
   render() {
 
     return html`
-      <style>
-        :host { display: block; }
-      </style>
-       <button @click="${this._onRefresh}" title="Refresh">Refresh</button>
-       <button @click="${this._onSave}" title="Save">Save</button>
-       <div id="myholder"></div>
+    ${SharedStyleSuAll}
+    
+    
+    <div class="ui stackable grid">
+      <div class="row">
+        <div class="four wide column">
+          <div class="ui stackable segment ">
+            <button class="ui labeled icon button blue ${this.activateLoader(this.isRefreshLoading)}" 
+            @click="${this._onRefresh}" >
+              <i class="refresh icon"></i>Refresh
+            </button>
+    
+            <button class="ui labeled icon button blue ${this.activateLoader(this.isSaveLoading)}" 
+            @click="${this._onSave}" >
+              <i class="save icon"></i>Save
+            </button>
+          </div>
+        </div>
+      </div>
+    
+      <div class="row ">
+        <div class="sixteen wide column">
+          <div class="ui stackable segment ${this.activateLoader(this.isGraphLoading())}" 
+              style="overflow: overlay;">
+            <div id="myholder"></div>
+    
+          </div>
+        </div>
+      </div>
+    </div>
     `;
   }
+
+
+
+  activateLoader(isLoading) {
+
+    if (isLoading)
+      return 'loading';
+    else
+      return '';
+  }
+
+
 
   static get properties() {
     return {
       flowItems: { type: Object },
-      graph: { type: Object }
+      graph: { type: Object },
+      isRefreshLoading: { type: Boolean },
+      isSaveLoading: { type: Boolean }
     }
   }
 
 
   _onRefresh() {
     this.graph.clear();
+    this.flowItems = undefined;
+    this.isRefreshLoading = true;
     store.dispatch(getAllFlowItems());
   }
 
   _onSave() {
 
-    var elem = this.graph.getElements().map((e) => { return {
-      title: e.attributes.attrs.label.text,
-      type: e.attributes.type == 'standard.Rectangle' ? 'action' :'event' ,
-      posX: e.attributes.position.x,
-      posY: e.attributes.position.y
-    };
+    
+    this.isSaveLoading = true;
+    var elem = this.graph.getElements().map((e) => {
+      return {
+        title: e.attributes.attrs.label.text,
+        type: e.attributes.type == 'standard.Rectangle' ? 'action' : 'event',
+        posX: e.attributes.position.x,
+        posY: e.attributes.position.y
+      };
     });
 
 
     console.log(elem);
 
-    var lnks = this.graph.getLinks().map((e) => { return {
-      source:  this.graph.getCell(e.attributes.source.id).attributes.attrs.label.text,
-      destination:  this.graph.getCell(e.attributes.target.id).attributes.attrs.label.text
-    };
+    var lnks = this.graph.getLinks().map((e) => {
+      return {
+        source: this.graph.getCell(e.attributes.source.id).attributes.attrs.label.text,
+        destination: this.graph.getCell(e.attributes.target.id).attributes.attrs.label.text
+      };
     });
 
     console.log(this.graph.getLinks());
@@ -133,21 +184,30 @@ class Graph extends connect(store)(LitElement) {
     var json = JSON.stringify(newFlowItems);
 
     console.log(json);
-    
+
+    this.graph.clear();
+    this.flowItems = undefined;
+
     store.dispatch(saveFlowItems(newFlowItems));
   }
 
+
+  isGraphLoading() {
+    return !this.graph ||
+      !this.flowItems ||
+      !this.flowItems.nodes ||
+      !this.flowItems.connections;
+  }
 
   // This is called every time something is updated in the store.
   stateChanged(state) {
     //  console.log("state", state.flowReducer.flowItems);
     //  console.log("graph", this.graph);
     this.flowItems = state.flowReducer.flowItems;
+    this.isRefreshLoading = state.flowReducer.isRefreshLoading;
+    this.isSaveLoading = state.flowReducer.isSaveLoading;
 
-    if (!this.graph ||
-      !this.flowItems ||
-      !this.flowItems.nodes ||
-      !this.flowItems.connections)
+    if (this.isGraphLoading())
       return;
 
 
