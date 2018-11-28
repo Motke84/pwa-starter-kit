@@ -20,7 +20,8 @@ export const getAllFlowItems = () => (dispatch) => {
     // You could reformat the data in the right format as well:
     let flowItems;
 //https://moti-m-weather-api.herokuapp.com/getFlow
-    axios.get('http://localhost:3000/getFlow', {
+//http://localhost/SD.ICE.Admin.Dashboard/Flow/GetFlow
+    axios.get('http://localhost/SD.ICE.Admin.Dashboard/Flow/GetFlow', {
         params: {
             
         }
@@ -50,16 +51,23 @@ export const saveFlowItems = (flowItems) => (dispatch) => {
     // You could reformat the data in the right format as well:
 
 //https://moti-m-weather-api.herokuapp.com/saveFlow
+//https://moti-m-weather-api.herokuapp.com/saveFlow
 
-
-    axios.post('http://localhost:3000/saveFlow', {
-        params: flowItems
-      })
+      axios({
+        url: 'http://localhost/SD.ICE.Admin.Dashboard/Flow/SaveFlow',
+        method: 'POST',
+        items: flowItems,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    })
       .then(function (response) {
+ 
         console.log(response.data);
 
         dispatch({
-            type: SAVE_FLOW_ITEMS
+            type: SAVE_FLOW_ITEMS,
+            flowItems
         });
       })
       .catch(function (error) {
