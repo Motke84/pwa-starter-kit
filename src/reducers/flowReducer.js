@@ -9,14 +9,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 */
 
 import {
-    GET_FLOW_ITEMS,
+    GET_FLOW_ITEMS, SAVE_FLOW_ITEMS,
 
   } from '../actions/flowActions';
   import { createSelector } from 'reselect';
   
   const INITIAL_STATE = {
     flowItems: {},
-    error: ''
+    error: '',
+    isRefreshLoading: false,
+    isSaveLoading: false
   };
   
   const flowReducer = (state = INITIAL_STATE, action) => {
@@ -26,7 +28,17 @@ import {
         
         return {
           ...state,
-          flowItems: action.flowItems
+          flowItems: action.flowItems,
+          isRefreshLoading: false
+        };
+
+      case SAVE_FLOW_ITEMS:
+        console.log(action);
+        
+        return {
+          ...state,
+          flowItems: action.flowItems,
+          isSaveLoading: false
         };
       default:
         return state;
