@@ -44,7 +44,7 @@ class Graph extends connect(store)(LitElement) {
 
   firstUpdated() {
 
-
+    this.isEditMode = false;
     const graph = new joint.dia.Graph;
     this.graph = graph;
 
@@ -54,23 +54,26 @@ class Graph extends connect(store)(LitElement) {
       width: 5500,
       height: 1000,
       gridSize: 50,
-      drawGrid: true,
-      // interactive: false 
+      drawGrid: {
+           name: 'mesh',
+           args: 
+             { color: 'white', thickness: 1 } // settings for the primary mesh
+         }
     });
 
 
-    //paper.drawGrid({ name: 'mesh', args: { color: 'black', thickness: 1  }});
+    this.paper = paper;
+    
+    this.paper.setInteractivity({ elementMove: false });
+    paper.drawGrid(false);
 
-    paper.setGrid(
-      {
-        name: 'mesh',
-        args:
-          {
-            color: 'black',
-            thickness: 10
-          }
-      }
-    );
+
+  
+   // paper.drawGrid({
+   //   name: 'mesh',
+  //    args: 
+  //      { color: 'black', thickness: 100 } // settings for the primary mesh
+  //  });
 
     paper.on('cell:pointerdown',
       (cellView, evt, x, y) => {
@@ -87,37 +90,56 @@ class Graph extends connect(store)(LitElement) {
 
   render() {
 
+
     return html`
     ${SharedStyleSuAll}
     
     
     <div class="ui stackable grid">
+    
       <div class="row">
-        <div class="four wide column">
+        <div class="eight wide column">
+    
           <div class="ui stackable segment ">
-            <button class="ui labeled icon button blue ${this.activateLoader(this.isRefreshLoading)}" 
-            @click="${this._onRefresh}" >
+    
+            <button class="ui labeled icon button blue ${this.activateLoader(this.isRefreshLoading)}" @click="${this._onRefresh}"
+              ?disabled="${this.isEditMode}">
               <i class="refresh icon"></i>Refresh
             </button>
     
-            <button class="ui labeled icon button blue ${this.activateLoader(this.isSaveLoading)}" 
-            @click="${this._onSave}" >
+            <button class="ui labeled icon button blue ${this.activateLoader(this.isSaveLoading)}" @click="${this._onSave}"
+              ?disabled="${!this.isEditMode}">
               <i class="save icon"></i>Save
             </button>
+    
+    
+            <label class="ui blue label">
+    
+              <div class="ui toggle checkbox">
+                <input type="checkbox" @click="${this._onChange}">
+                <label>
+                  <i class="inverted icon arrows alternate"></i>
+                </label>
+              </div>
+              ${this.isEditMode ?  'Edit Mode' : 'View Mode'}
+            </label>
+    
           </div>
         </div>
-      </div>
     
-      <div class="row ">
-        <div class="sixteen wide column">
-          <div class="ui stackable segment ${this.activateLoader(this.isGraphLoading())}" 
-              style="overflow: overlay;">
-            <div id="myholder"></div>
+        <div class="row" style="overflow: overlay;">
+    
+          <div class="sixteen wide column">
+    
+            <div class="ui stackable segment ${this.activateLoader(this.isGraphLoading())}">
+              <div id="myholder"></div>
+            </div>
     
           </div>
+    
         </div>
+    
       </div>
-    </div>
     `;
   }
 
@@ -137,8 +159,10 @@ class Graph extends connect(store)(LitElement) {
     return {
       flowItems: { type: Object },
       graph: { type: Object },
+      paper: { type: Object },
       isRefreshLoading: { type: Boolean },
-      isSaveLoading: { type: Boolean }
+      isSaveLoading: { type: Boolean },
+      isEditMode: { type: Boolean }
     }
   }
 
@@ -150,9 +174,25 @@ class Graph extends connect(store)(LitElement) {
     store.dispatch(getAllFlowItems());
   }
 
-  _onSave() {
+  _onChange() {
+    // console.log(this.paper.options.interactive.labelMove );
 
+    this.isEditMode = !this.isEditMode;
+
+    if (this.isEditMode){
+      this.paper.drawGrid({color: 'gray'});
+      this.paper.setInteractivity({ elementMove: true })
+    }
+    else{
+      this.paper.drawGrid({color: 'white'});
+      this.paper.setInteractivity({ elementMove: false });
+    }
+      
     
+    //  this.paper.options.interactive.labelMove = this.isEditMode;
+  }
+
+  _onSave() {
     this.isSaveLoading = true;
     var elem = this.graph.getElements().map((e) => {
       return {
@@ -177,13 +217,14 @@ class Graph extends connect(store)(LitElement) {
     console.log(lnks);
 
     var newFlowItems = {
+      num: 3,
       nodes: elem,
       connections: lnks
     };
 
-    var json = JSON.stringify(newFlowItems);
+    //var json = JSON.stringify(newFlowItems);
 
-    console.log(json);
+    //console.log(json);
 
     this.graph.clear();
     this.flowItems = undefined;
