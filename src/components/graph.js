@@ -27,7 +27,9 @@ import { ButtonSharedStyles, HeaderRed } from './button-shared-styles.js';
 
 import { SharedStyleSuAll } from './styles/shared-styles-su-all';
 
+import './header-button';
 
+import './header-toggle-button';
 
 class Graph extends connect(store)(LitElement) {
 
@@ -37,10 +39,6 @@ class Graph extends connect(store)(LitElement) {
 
   }
 
-  /*
-   updated(_changedProperties){
-    console.log(_changedProperties);
-  }*/
 
   firstUpdated() {
 
@@ -51,35 +49,29 @@ class Graph extends connect(store)(LitElement) {
     const paper = new joint.dia.Paper({
       el: this.shadowRoot.getElementById('myholder'),
       model: graph,
-      width: 5500,
+      width: 5000,
       height: 1000,
       gridSize: 50,
       drawGrid: {
-           name: 'mesh',
-           args: 
-             { color: 'white', thickness: 1 } // settings for the primary mesh
-         }
+        name: 'mesh',
+        args:
+          { color: 'white', thickness: 1 } // settings for the primary mesh
+      }
     });
 
 
     this.paper = paper;
-    
+
     this.paper.setInteractivity({ elementMove: false });
     paper.drawGrid(false);
 
 
-  
-   // paper.drawGrid({
-   //   name: 'mesh',
-  //    args: 
-  //      { color: 'black', thickness: 100 } // settings for the primary mesh
-  //  });
-
     paper.on('cell:pointerdown',
       (cellView, evt, x, y) => {
 
-        // var shape = this.graph.getCell(cellView.model.id);
-        // shape.attr('body/fill', 'red');
+        var shape = this.graph.getCell(cellView.model.id);
+      //  shape.attr('body/fill', '#BE2828');
+        console.log(shape);
       }
     );
 
@@ -102,27 +94,17 @@ class Graph extends connect(store)(LitElement) {
     
           <div class="ui stackable segment ">
     
-            <button class="ui labeled icon button blue ${this.activateLoader(this.isRefreshLoading)}" @click="${this._onRefresh}"
-              ?disabled="${this.isEditMode}">
-              <i class="refresh icon"></i>Refresh
-            </button>
+            <header-button name="Refresh" color='blue' icon='refresh' ?disabled="${this.isEditMode || this.isRefreshLoading}"
+              ?loading="${this.isRefreshLoading}" @onClick="${this._onRefresh}">
+            </header-button>
     
-            <button class="ui labeled icon button blue ${this.activateLoader(this.isSaveLoading)}" @click="${this._onSave}"
-              ?disabled="${!this.isEditMode}">
-              <i class="save icon"></i>Save
-            </button>
+            <header-button name="Save" color='blue' icon='save' ?disabled="${!this.isEditMode || this.isRefreshLoading}"
+              ?loading="${this.isSaveLoading}" @onClick="${this._onSave}">
+            </header-button>
     
-    
-            <label class="ui blue label">
-    
-              <div class="ui toggle checkbox">
-                <input type="checkbox" @click="${this._onChange}">
-                <label>
-                  <i class="inverted icon arrows alternate"></i>
-                </label>
-              </div>
-              ${this.isEditMode ?  'Edit Mode' : 'View Mode'}
-            </label>
+            <header-toggle-button on_name='Edit Mode' off_name='View Mode' color='blue' ?disabled="${this.isSaveLoading || this.isRefreshLoading}"
+              icon='arrows alternate' @onChange="${this._onChange}" ?on="${this.isEditMode}">
+            </header-toggle-button>
     
           </div>
         </div>
@@ -148,9 +130,17 @@ class Graph extends connect(store)(LitElement) {
   activateLoader(isLoading) {
 
     if (isLoading)
-      return 'loading';
+      return 'loading disabled';
     else
       return '';
+  }
+
+  activateIconLoader(isLoading, originalStyle) {
+
+    if (isLoading)
+      return 'inverted notched circle loading icon';
+    else
+      return originalStyle;
   }
 
 
@@ -174,21 +164,21 @@ class Graph extends connect(store)(LitElement) {
     store.dispatch(getAllFlowItems());
   }
 
-  _onChange() {
-    // console.log(this.paper.options.interactive.labelMove );
+  _onChange(e) {
+    console.log(e);
 
-    this.isEditMode = !this.isEditMode;
+    this.isEditMode = e.detail.checked;
 
-    if (this.isEditMode){
-      this.paper.drawGrid({color: 'gray'});
+    if (this.isEditMode) {
+      this.paper.drawGrid({ color: 'gray' });
       this.paper.setInteractivity({ elementMove: true })
     }
-    else{
-      this.paper.drawGrid({color: 'white'});
+    else {
+      this.paper.drawGrid({ color: 'white' });
       this.paper.setInteractivity({ elementMove: false });
     }
-      
-    
+
+
     //  this.paper.options.interactive.labelMove = this.isEditMode;
   }
 
@@ -199,22 +189,19 @@ class Graph extends connect(store)(LitElement) {
         title: e.attributes.attrs.label.text,
         type: e.attributes.type == 'standard.Rectangle' ? 'action' : 'event',
         posX: e.attributes.position.x,
-        posY: e.attributes.position.y
+        posY: e.attributes.position.y,
+        id: +e.attributes.id
       };
     });
 
-
-    console.log(elem);
 
     var lnks = this.graph.getLinks().map((e) => {
       return {
-        source: this.graph.getCell(e.attributes.source.id).attributes.attrs.label.text,
-        destination: this.graph.getCell(e.attributes.target.id).attributes.attrs.label.text
+        source: +e.attributes.source.id,
+        destination: +e.attributes.target.id
       };
     });
 
-    console.log(this.graph.getLinks());
-    console.log(lnks);
 
     var newFlowItems = {
       num: 3,
@@ -242,8 +229,7 @@ class Graph extends connect(store)(LitElement) {
 
   // This is called every time something is updated in the store.
   stateChanged(state) {
-    //  console.log("state", state.flowReducer.flowItems);
-    //  console.log("graph", this.graph);
+
     this.flowItems = state.flowReducer.flowItems;
     this.isRefreshLoading = state.flowReducer.isRefreshLoading;
     this.isSaveLoading = state.flowReducer.isSaveLoading;
@@ -267,15 +253,24 @@ class Graph extends connect(store)(LitElement) {
 
 
   createNode(elem) {
+
     const shape = elem.type == 'event' ?
-      new joint.shapes.standard.Ellipse() :
+      new joint.shapes.standard.Path() :
       new joint.shapes.standard.Rectangle()
 
+
+    const size = elem.title.length;
+
+
+
+    shape.attributes.id = elem.id.toString();
     shape.position(+elem.posX, +elem.posY);
-    shape.resize(300, 40);
+
+    shape.resize(280, 40);
     shape.attr({
       body: {
-        fill: elem.type == 'event' ? 'green' : 'blue'
+        fill: this.getColor(elem.status), //elem.type == 'event' ? '#218545' : '#2185d0',
+        refD: 'M 0 5 10 0 C 20 0 20 20 10 20 L 0 15 Z'
       },
       label: {
         text: elem.title,
@@ -283,14 +278,48 @@ class Graph extends connect(store)(LitElement) {
       }
     });
 
+    shape.exception = elem.exception;
+
     return shape;
   }
+/*
+  New = 1,
+  InProgess = 2,
+  Success = 3,
+  Failed = 4,
+  Waiting/Cancel = 5,
+  SuccessWithErrors = 6,*/
 
+
+  getColor(status){
+
+      console.log(status);
+      
+      switch(status)
+      {
+        case 0:          
+          return '#2185d0'; //blue
+        case 1:          
+          return '#247172'; //turquoise
+        case 2:          
+          return '#27A579'; //light green
+        case 3:          
+          return '#218545'; //green
+        case 4:          
+          return '#BE2828'; //red
+        case 5:          
+          return '#44001A'; //dark scarlet
+        case 6:          
+          return '#E05323'; //orange
+      }
+
+  }
 
   createLink(con, elems) {
+
     const link = new joint.shapes.standard.Link()
-    const rect1 = elems.find(e => e.attributes.attrs.label.text == con.source);
-    const rect2 = elems.find(e => e.attributes.attrs.label.text == con.destination);
+    const rect1 = elems.find(e => e.attributes.id == con.source.toString());
+    const rect2 = elems.find(e => e.attributes.id == con.destination.toString());
 
     link.source(rect1);
     link.target(rect2);
