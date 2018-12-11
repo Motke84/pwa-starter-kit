@@ -262,6 +262,7 @@ class Graph extends connect(store)(LitElement) {
     const size = elem.title.length;
 
 
+    shape.tagName =  'rect' 
 
     shape.attributes.id = elem.id.toString();
     shape.position(+elem.posX, +elem.posY);
@@ -270,7 +271,7 @@ class Graph extends connect(store)(LitElement) {
     shape.attr({
       body: {
         fill: this.getColor(elem.status), //elem.type == 'event' ? '#218545' : '#2185d0',
-        refD: 'M 0 5 10 0 C 20 0 20 20 10 20 L 0 15 Z'
+        refD: 'M 150 150 Q 50 150 50 250 Q 50 350 150 350 L 300 350 Q 375 350 450 350 Q 550 350 550 250 Q 550 150 450 150 L 300 150 Z'
       },
       label: {
         text: elem.title,
@@ -318,6 +319,7 @@ class Graph extends connect(store)(LitElement) {
   createLink(con, elems) {
 
     const link = new joint.shapes.standard.Link()
+    link.smooth = true;
     const rect1 = elems.find(e => e.attributes.id == con.source.toString());
     const rect2 = elems.find(e => e.attributes.id == con.destination.toString());
 
