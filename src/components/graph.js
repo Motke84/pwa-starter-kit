@@ -30,6 +30,10 @@ import { SharedStyleSuAll } from './styles/shared-styles-su-all';
 import './header-button';
 
 import './header-toggle-button';
+import './date-picker';
+
+import '@vaadin/vaadin-date-picker/vaadin-date-picker.js';
+import '@vaadin/vaadin-date-picker/vaadin-date-picker-light';
 
 class Graph extends connect(store)(LitElement) {
 
@@ -42,40 +46,53 @@ class Graph extends connect(store)(LitElement) {
 
   firstUpdated() {
 
-    this.isEditMode = false;
-    const graph = new joint.dia.Graph;
-    this.graph = graph;
+    try {
+      this.isEditMode = false;
+      const graph = new joint.dia.Graph;
+      this.graph = graph;
 
-    const paper = new joint.dia.Paper({
-      el: this.shadowRoot.getElementById('myholder'),
-      model: graph,
-      width: 5000,
-      height: 1000,
-      gridSize: 50,
-      drawGrid: {
-        name: 'mesh',
-        args:
-          { color: 'white', thickness: 1 } // settings for the primary mesh
-      }
-    });
-
-
-    this.paper = paper;
-
-    this.paper.setInteractivity({ elementMove: false });
-    paper.drawGrid(false);
+      const paper = new joint.dia.Paper({
+        el: this.shadowRoot.getElementById('myholder'),
+        model: graph,
+        width: 5000,
+        height: 1000,
+        gridSize: 50,
+        drawGrid: {
+          name: 'mesh',
+          args:
+            { color: 'white', thickness: 1 } // settings for the primary mesh
+        }
+      });
 
 
-    paper.on('cell:pointerdown',
-      (cellView, evt, x, y) => {
+      this.paper = paper;
 
-        var shape = this.graph.getCell(cellView.model.id);
-      //  shape.attr('body/fill', '#BE2828');
-        console.log(shape);
-      }
-    );
+      this.paper.setInteractivity({ elementMove: false });
+      paper.drawGrid(false);
 
-    store.dispatch(getAllFlowItems());
+
+      paper.on('cell:pointerdown',
+        (cellView, evt, x, y) => {
+
+          var shape = this.graph.getCell(cellView.model.id);
+          //  shape.attr('body/fill', '#BE2828');
+          console.log(shape.id, shape.exception);
+        }
+      );
+    }
+    catch (err) {
+
+    }
+
+    // let today = new Date().toISOString().slice(0, 10)
+    let today = "2018-02-14";
+
+    this.date = today;
+
+
+
+
+    store.dispatch(getAllFlowItems(this.date));
   }
 
 
@@ -84,6 +101,7 @@ class Graph extends connect(store)(LitElement) {
 
 
     return html`
+  
     ${SharedStyleSuAll}
     
     
@@ -102,9 +120,17 @@ class Graph extends connect(store)(LitElement) {
               ?loading="${this.isSaveLoading}" @onClick="${this._onSave}">
             </header-button>
     
+            
+            <date-picker name="Valuation Date" color='blue' icon='calendar' ?disabled="${this.isEditMode || this.isRefreshLoading || this.isSaveLoading}"
+               ?readonly="${true}" @onDateChanged="${this._onDateChange}" >
+            </date-picker>
+            
             <header-toggle-button on_name='Edit Mode' off_name='View Mode' color='blue' ?disabled="${this.isSaveLoading || this.isRefreshLoading}"
               icon='arrows alternate' @onChange="${this._onChange}" ?on="${this.isEditMode}">
             </header-toggle-button>
+    
+
+    
     
           </div>
         </div>
@@ -152,7 +178,8 @@ class Graph extends connect(store)(LitElement) {
       paper: { type: Object },
       isRefreshLoading: { type: Boolean },
       isSaveLoading: { type: Boolean },
-      isEditMode: { type: Boolean }
+      isEditMode: { type: Boolean },
+      date: { type: String, notify: true },
     }
   }
 
@@ -161,11 +188,15 @@ class Graph extends connect(store)(LitElement) {
     this.graph.clear();
     this.flowItems = undefined;
     this.isRefreshLoading = true;
-    store.dispatch(getAllFlowItems());
+    store.dispatch(getAllFlowItems(this.date));
+  }
+
+
+  _onDateChange(e) {
+    this.date = e.detail.date;
   }
 
   _onChange(e) {
-    console.log(e);
 
     this.isEditMode = e.detail.checked;
 
@@ -177,9 +208,6 @@ class Graph extends connect(store)(LitElement) {
       this.paper.drawGrid({ color: 'white' });
       this.paper.setInteractivity({ elementMove: false });
     }
-
-
-    //  this.paper.options.interactive.labelMove = this.isEditMode;
   }
 
   _onSave() {
@@ -190,7 +218,8 @@ class Graph extends connect(store)(LitElement) {
         type: e.attributes.type == 'standard.Rectangle' ? 'action' : 'event',
         posX: e.attributes.position.x,
         posY: e.attributes.position.y,
-        id: +e.attributes.id
+        id: +e.attributes.id,
+        status: e.status
       };
     });
 
@@ -262,7 +291,7 @@ class Graph extends connect(store)(LitElement) {
     const size = elem.title.length;
 
 
-    shape.tagName =  'rect' 
+    shape.tagName = 'rect'
 
     shape.attributes.id = elem.id.toString();
     shape.position(+elem.posX, +elem.posY);
@@ -279,40 +308,38 @@ class Graph extends connect(store)(LitElement) {
       }
     });
 
+    shape.status = elem.status;
     shape.exception = elem.exception;
 
     return shape;
   }
-/*
-  New = 1,
-  InProgess = 2,
-  Success = 3,
-  Failed = 4,
-  Waiting/Cancel = 5,
-  SuccessWithErrors = 6,*/
+  /*
+    New = 1,
+    InProgess = 2,
+    Success = 3,
+    Failed = 4,
+    Waiting/Cancel = 5,
+    SuccessWithErrors = 6,*/
 
 
-  getColor(status){
+  getColor(status) {
 
-      console.log(status);
-      
-      switch(status)
-      {
-        case 0:          
-          return '#2185d0'; //blue
-        case 1:          
-          return '#247172'; //turquoise
-        case 2:          
-          return '#27A579'; //light green
-        case 3:          
-          return '#218545'; //green
-        case 4:          
-          return '#BE2828'; //red
-        case 5:          
-          return '#44001A'; //dark scarlet
-        case 6:          
-          return '#E05323'; //orange
-      }
+    switch (status) {
+      case 0:
+        return '#2185d0'; //blue
+      case 1:
+        return '#247172'; //turquoise
+      case 2:
+        return '#27A579'; //light green
+      case 3:
+        return '#218545'; //green
+      case 4:
+        return '#BE2828'; //red
+      case 5:
+        return '#44001A'; //dark scarlet
+      case 6:
+        return '#E05323'; //orange
+    }
 
   }
 
@@ -330,7 +357,6 @@ class Graph extends connect(store)(LitElement) {
   }
 
 }
-
 
 
 window.customElements.define('flow-graph', Graph);
