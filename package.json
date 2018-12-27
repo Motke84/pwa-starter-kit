@@ -29,7 +29,8 @@
     "redux-thunk": "^2.3.0",
     "reselect": "^4.0.0",
     "axios-promise-redux-middleware": "1.0.1",
-    "axios": "^0.18.0"
+    "axios": "^0.18.0",
+    "@vaadin/vaadin-date-picker": "^3.3.2"
   },
   "devDependencies": {
     "axe-core": "^3.0.0",
