@@ -57,9 +57,11 @@ const updatePage = (page) => {
 
 let snackbarTimer;
 
-export const showSnackbar = () => (dispatch) => {
+export const showSnackbar = (message, isError) => (dispatch) => {
   dispatch({
-    type: OPEN_SNACKBAR
+    type: OPEN_SNACKBAR,
+    message,
+    isError
   });
   window.clearTimeout(snackbarTimer);
   snackbarTimer = window.setTimeout(() =>
