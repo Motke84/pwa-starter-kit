@@ -9,7 +9,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 */
 
 import {
-    GET_FLOW_ITEMS, SAVE_FLOW_ITEMS,
+  OPEN_SNACKBAR
+} from '../actions/app.js';
+
+import {
+    GET_FLOW_ITEMS, SAVE_FLOW_ITEMS,GOT_FLOW_ITEMS, FLOW_ERROR
 
   } from '../actions/flowActions';
   import { createSelector } from 'reselect';
@@ -18,26 +22,45 @@ import {
     flowItems: {},
     error: '',
     isRefreshLoading: false,
-    isSaveLoading: false
+    isSaveLoading: false,
+    isGraphLoading: false,
+    date: ''
   };
   
   const flowReducer = (state = INITIAL_STATE, action) => {
     switch (action.type) {
       case GET_FLOW_ITEMS:
-        console.log(action);
-        
+
         return {
-          ...state,
-          flowItems: action.flowItems,
-          isRefreshLoading: false
+          ...state,         
+          isGraphLoading: true,
+          isRefreshLoading: true,
+          date: action.date,
         };
 
+      case GOT_FLOW_ITEMS:
+
+        return {
+          ...state,
+          flowItems: action.flowItems,
+          isRefreshLoading: false,
+          isGraphLoading: false,
+          isSaveLoading: false
+        };
       case SAVE_FLOW_ITEMS:
-        console.log(action);
+      //  console.log(action);
         
         return {
           ...state,
           flowItems: action.flowItems,
+          isSaveLoading: false
+        };
+      case FLOW_ERROR:
+      console.log(action);
+        return {
+          ...state,
+          isRefreshLoading: false,
+          isGraphLoading: false,
           isSaveLoading: false
         };
       default:
