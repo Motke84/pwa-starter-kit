@@ -15,6 +15,7 @@ import { installMediaQueryWatcher } from 'pwa-helpers/media-query.js';
 import { installOfflineWatcher } from 'pwa-helpers/network.js';
 import { installRouter } from 'pwa-helpers/router.js';
 import { updateMetadata } from 'pwa-helpers/metadata.js';
+import '@polymer/paper-toast/paper-toast.js';
 
 // This element is connected to the Redux store.
 import { store } from '../store.js';
@@ -33,12 +34,16 @@ import '@polymer/app-layout/app-scroll-effects/effects/waterfall.js';
 import '@polymer/app-layout/app-toolbar/app-toolbar.js';
 import { menuIcon } from './my-icons.js';
 import './snack-bar.js';
+import './poly-toaster.js'
 
 class MyApp extends connect(store)(LitElement) {
   render() {
     // Anything that's related to rendering should be done in here.
     return html`
     <style>
+        @import '../../../public/Semantic-UI-CSS-master/semantic.min.css';
+        @import '../../../public/joint.min.css';
+
       :host {
         --app-drawer-width: 256px;
         display: block;
@@ -154,6 +159,7 @@ class MyApp extends connect(store)(LitElement) {
         background: var(--app-drawer-background-color);
         color: var(--app-drawer-text-color);
         text-align: center;
+        
       }
 
       /* Wide layout: when the viewport width is bigger than 460px, layout
@@ -177,6 +183,16 @@ class MyApp extends connect(store)(LitElement) {
           padding-right: 0px;
         }
       }
+
+        .toast-succses {
+          --paper-toast-background-color: #51a351;
+          --paper-toast-color: white;
+          position:fixed;
+          right: 0;
+          left:unset!important;
+          border-radius: 3px;
+          /*      margin-left: calc(50vw - 150px);*/
+        }
     </style>
 
     <!-- Header -->
@@ -212,14 +228,20 @@ class MyApp extends connect(store)(LitElement) {
       <my-view404 class="page" ?active="${this._page === 'view404'}"></my-view404>
     </main>
 
+
     <footer>
       <p>Made with &hearts; by the Polymer team.</p>
     </footer>
 
-    <snack-bar ?active="${this._snackbarOpened}">
-        You are now ${this._offline ? 'offline' : 'online'}.</snack-bar>
+
+
+    <poly-toaster  
+      ?opened="${this._snackbarOpened}" 
+      message="${this._snackbarMessage}" 
+      ?isError="${this._isError}" /> 
     `;
   }
+
 
   static get properties() {
     return {
@@ -227,7 +249,8 @@ class MyApp extends connect(store)(LitElement) {
       _page: { type: String },
       _drawerOpened: { type: Boolean },
       _snackbarOpened: { type: Boolean },
-      _offline: { type: Boolean }
+      _offline: { type: Boolean },
+      _isError: { type: Boolean }
     }
   }
 
@@ -242,7 +265,7 @@ class MyApp extends connect(store)(LitElement) {
     installRouter((location) => store.dispatch(navigate(decodeURIComponent(location.pathname))));
     installOfflineWatcher((offline) => store.dispatch(updateOffline(offline)));
     installMediaQueryWatcher(`(min-width: 460px)`,
-        () => store.dispatch(updateDrawerState(false)));
+      () => store.dispatch(updateDrawerState(false)));
   }
 
   updated(changedProps) {
@@ -268,7 +291,9 @@ class MyApp extends connect(store)(LitElement) {
     this._page = state.app.page;
     this._offline = state.app.offline;
     this._snackbarOpened = state.app.snackbarOpened;
+    this._snackbarMessage = state.app.snackbarMessage;
     this._drawerOpened = state.app.drawerOpened;
+    this._isError= state.app.snackbarIsError;
   }
 }
 
