@@ -31,9 +31,12 @@ import './header-button';
 
 import './header-toggle-button';
 import './date-picker';
+import './error-message-modal';
 
 import '@vaadin/vaadin-date-picker/vaadin-date-picker.js';
 import '@vaadin/vaadin-date-picker/vaadin-date-picker-light';
+import '@polymer/paper-dialog/paper-dialog.js';
+//import * as  $  from '../../node_modules/jquery'; 
 
 class Graph extends connect(store)(LitElement) {
 
@@ -75,8 +78,17 @@ class Graph extends connect(store)(LitElement) {
         (cellView, evt, x, y) => {
 
           var shape = this.graph.getCell(cellView.model.id);
-          //  shape.attr('body/fill', '#BE2828');
+
           console.log(shape.id, shape.exception);
+
+          this.selectedShape =
+            {
+              name: shape.attributes.attrs.label.text,
+              exception: shape.exception
+            };
+
+          if (shape.exception)
+            this.showDialog = true;
         }
       );
     }
@@ -95,80 +107,88 @@ class Graph extends connect(store)(LitElement) {
     store.dispatch(getAllFlowItems(this.date));
   }
 
+  copyStringToClipboard() {
+
+    var el = this.shadowRoot.getElementById('textarea');
+    // Select text inside element
+    el.select();
+    // Copy text to clipboard
+    document.execCommand('copy');
+  }
+
 
 
   render() {
-
 
     return html`
   
     ${SharedStyleSuAll}
     
+    <div>
     
-    <div class="ui stackable grid">
+      <error-message-modal color='blue' icon='bullhorn' ?opened="${this.showDialog}" .data="${this.selectedShape}"
+        @onModalClick="${this._onModalClick}">
+      </error-message-modal>
     
-      <div class="row">
-        <div class="eight wide column">
+      <div class="ui stackable grid">
     
-          <div class="ui stackable segment ">
+        <div class="row">
+          <div class="column">
     
-            <header-button name="Refresh" color='blue' icon='refresh' ?disabled="${this.isEditMode || this.isRefreshLoading}"
-              ?loading="${this.isRefreshLoading}" @onClick="${this._onRefresh}">
-            </header-button>
+            <div class="ui menu" ?disabled="${this.graphLoading}">
     
-            <header-button name="Save" color='blue' icon='save' ?disabled="${!this.isEditMode || this.isRefreshLoading}"
-              ?loading="${this.isSaveLoading}" @onClick="${this._onSave}">
-            </header-button>
+              <div class="item">
+                <header-button name="Refresh" color='blue' icon='refresh' ?disabled="${this.isEditMode || this.isRefreshLoading}"
+                  ?loading="${this.isRefreshLoading}" @onClick="${this._onRefresh}">
+                </header-button>
+              </div>
     
-            
-            <date-picker name="Valuation Date" color='blue' icon='calendar' ?disabled="${this.isEditMode || this.isRefreshLoading || this.isSaveLoading}"
-               ?readonly="${true}" @onDateChanged="${this._onDateChange}" >
-            </date-picker>
-            
-            <header-toggle-button on_name='Edit Mode' off_name='View Mode' color='blue' ?disabled="${this.isSaveLoading || this.isRefreshLoading}"
-              icon='arrows alternate' @onChange="${this._onChange}" ?on="${this.isEditMode}">
-            </header-toggle-button>
+              <div class="item">
+                <header-button name="Save" color='blue' icon='save' ?disabled="${!this.isEditMode || this.isRefreshLoading}"
+                  ?loading="${this.isSaveLoading}" @onClick="${this._onSave}">
+                </header-button>
+              </div>
     
-
+              <div class="item">
+                <date-picker name="Valuation Date" color='blue' icon='calendar' ?disabled="${this.isEditMode || this.isRefreshLoading || this.isSaveLoading}"
+                  ?readonly="${true}" @onDateChanged="${this._onDateChange}">
+                </date-picker>
+              </div>
     
+              <div class="item">
+                <header-toggle-button on_name='Edit Mode' off_name='View Mode' color='blue' ?disabled="${this.isSaveLoading || this.isRefreshLoading}"
+                  icon='arrows alternate' @onChange="${this._onChange}" ?on="${this.isEditMode}">
+                </header-toggle-button>
+              </div>
+    
+            </div>
     
           </div>
         </div>
     
-        <div class="row" style="overflow: overlay;">
+        <div class="row">
     
-          <div class="sixteen wide column">
-    
-            <div class="ui stackable segment ${this.activateLoader(this.isGraphLoading())}">
+          <div class="column">
+            <div class="ui segment ${this.activateLoader(this.isGraphLoading())} " style="overflow: overlay; max-width: 97.5%;">
               <div id="myholder"></div>
             </div>
-    
           </div>
     
         </div>
     
       </div>
+    </div>
     `;
   }
 
-
+  _onModalClick() {
+    console.log("onModalClick");
+    this.showDialog = false;
+  }
 
   activateLoader(isLoading) {
-
-    if (isLoading)
-      return 'loading disabled';
-    else
-      return '';
+    return isLoading ? 'loading disabled' : '';
   }
-
-  activateIconLoader(isLoading, originalStyle) {
-
-    if (isLoading)
-      return 'inverted notched circle loading icon';
-    else
-      return originalStyle;
-  }
-
 
 
   static get properties() {
@@ -179,20 +199,28 @@ class Graph extends connect(store)(LitElement) {
       isRefreshLoading: { type: Boolean },
       isSaveLoading: { type: Boolean },
       isEditMode: { type: Boolean },
-      date: { type: String, notify: true },
+      date: { type: String },
+      graphLoading: { type: Boolean },
+      showDialog: { type: Boolean },
+      selectedShape: { type: Object },
     }
   }
 
 
   _onRefresh() {
+
+    this.graphLoading = true;
     this.graph.clear();
     this.flowItems = undefined;
     this.isRefreshLoading = true;
+    this.isSaveLoading = true;
+
     store.dispatch(getAllFlowItems(this.date));
   }
 
 
   _onDateChange(e) {
+
     this.date = e.detail.date;
   }
 
@@ -212,6 +240,7 @@ class Graph extends connect(store)(LitElement) {
 
   _onSave() {
     this.isSaveLoading = true;
+    this.graphLoading = true;
     var elem = this.graph.getElements().map((e) => {
       return {
         title: e.attributes.attrs.label.text,
@@ -238,10 +267,6 @@ class Graph extends connect(store)(LitElement) {
       connections: lnks
     };
 
-    //var json = JSON.stringify(newFlowItems);
-
-    //console.log(json);
-
     this.graph.clear();
     this.flowItems = undefined;
 
@@ -250,10 +275,12 @@ class Graph extends connect(store)(LitElement) {
 
 
   isGraphLoading() {
-    return !this.graph ||
-      !this.flowItems ||
-      !this.flowItems.nodes ||
-      !this.flowItems.connections;
+    if (this.graphLoading)
+      return true;
+
+    console.log("isGraphLoading", this.graphLoading);
+
+    return !this.graph
   }
 
   // This is called every time something is updated in the store.
@@ -262,10 +289,16 @@ class Graph extends connect(store)(LitElement) {
     this.flowItems = state.flowReducer.flowItems;
     this.isRefreshLoading = state.flowReducer.isRefreshLoading;
     this.isSaveLoading = state.flowReducer.isSaveLoading;
+    this.graphLoading = state.flowReducer.isGraphLoading;
+    this.date = state.flowReducer.date;
+
+    console.log(state.flowReducer);
 
     if (this.isGraphLoading())
       return;
 
+    if (!state.flowReducer.flowItems || !state.flowReducer.flowItems.nodes)
+      return;
 
     state.flowReducer.flowItems.nodes.forEach((elem) => {
       const rect = this.createNode(elem);
@@ -313,6 +346,7 @@ class Graph extends connect(store)(LitElement) {
 
     return shape;
   }
+
   /*
     New = 1,
     InProgess = 2,
@@ -320,8 +354,6 @@ class Graph extends connect(store)(LitElement) {
     Failed = 4,
     Waiting/Cancel = 5,
     SuccessWithErrors = 6,*/
-
-
   getColor(status) {
 
     switch (status) {
